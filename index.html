@@ -237,7 +237,7 @@ function tmStart(){if(!tmInit){tmBuildTabs();tmInit=true;}tmLoad();if(!tmTimer)t
 function tmStop(){if(tmTimer){clearInterval(tmTimer);tmTimer=null;}}
 
 /* ================= ROUTER ================= */
-const TEAM_PASS='anmc2026';
+const TEAM_PASS='Anmc2026SPC';
 function teamUnlocked(){try{return localStorage.getItem('anmc_team_ok')==='1';}catch(_){return false;}}
 function route(){const team=(location.hash||'').toLowerCase().indexOf('team')>=0;
   if(team&&!teamUnlocked()){
