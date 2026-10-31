@@ -1,3 +1,4 @@
+
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ANMC 2026 Session Sign-up</title>
@@ -111,7 +112,7 @@ input::placeholder{color:#9fb2cc}
     <div class="editnote" id="tmNote" style="display:none">Edit mode ON — changes are saved immediately for everyone.</div>
     <div class="tabs" id="tmTabs"></div>
     <button class="refresh" id="tmRefresh">↻ Refresh now</button>
-    <div class="auto">Auto-refreshing every 20s · <a href="#" id="toSignup" style="color:var(--blue)">attendee view</a></div>
+    <div class="auto">Auto-refreshing every 20s · <a href="#" id="toSignup" style="color:var(--blue)">attendee view</a> · <a href="#" id="tmLogout" style="color:var(--red)">🔒 log out</a></div>
     <div id="tmBlocks"></div>
   </div>
 
@@ -237,12 +238,12 @@ function tmStart(){if(!tmInit){tmBuildTabs();tmInit=true;}tmLoad();if(!tmTimer)t
 function tmStop(){if(tmTimer){clearInterval(tmTimer);tmTimer=null;}}
 
 /* ================= ROUTER ================= */
-const TEAM_PASS='Anmc2026SPC';
+const TEAM_PASS='anmc2026spc';
 function teamUnlocked(){try{return localStorage.getItem('anmc_team_ok')==='1';}catch(_){return false;}}
 function route(){const team=(location.hash||'').toLowerCase().indexOf('team')>=0;
   if(team&&!teamUnlocked()){
     const c=prompt('Enter team passcode:');
-    if(c&&c.trim()===TEAM_PASS){try{localStorage.setItem('anmc_team_ok','1');}catch(_){}}
+    if(c&&c.replace(/\s/g,'').toLowerCase()===TEAM_PASS){try{localStorage.setItem('anmc_team_ok','1');}catch(_){}}
     else{location.hash='';return;}
   }
   document.getElementById('screen-signup').style.display=team?'none':'block';
@@ -253,5 +254,6 @@ function route(){const team=(location.hash||'').toLowerCase().indexOf('team')>=0
   if(team){tmStart();}else{tmStop();}}
 window.addEventListener('hashchange',route);
 document.getElementById('toSignup').onclick=(e)=>{e.preventDefault();location.hash='';};
+document.getElementById('tmLogout').onclick=(e)=>{e.preventDefault();try{localStorage.removeItem('anmc_team_ok');}catch(_){}toast('Logged out');location.hash='';};
 route();
 </script></body></html>
