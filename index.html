@@ -1,10 +1,10 @@
-
 <!doctype html><html lang="en"><head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>ANMC 2026 Session Sign-up</title>
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html5-qrcode/2.3.8/html5-qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 <style>
 :root{--navy:#0c149b;--blue:#1766b3;--blue2:#2a79c9;--teal:#2aa0c6;--green:#2f8f1f;--red:#c0392b;--amber:#c98a00;--ink:#243b5e;--line:#dfeaf6;--bg:#eef5fc;--muted:#7790b0}
 *{box-sizing:border-box}
@@ -99,7 +99,10 @@ input::placeholder{color:#9fb2cc}
     </div>
     <div id="booking" style="display:none">
       <div class="tabs" id="sgTabs"></div>
-      <button class="refresh" id="sgRefresh">↻ Refresh seats</button>
+      <div style="display:flex;gap:10px">
+        <button class="refresh" id="sgRefresh" style="flex:1;margin:2px 0 0">↻ Refresh seats</button>
+        <button class="refresh" id="sgPdf" style="flex:1;margin:2px 0 0;color:var(--green)">⬇ My schedule (PDF)</button>
+      </div>
       <div id="sgBlocks"></div>
     </div>
     <div class="teamlink"><a href="#team">🔒 Team access</a></div>
@@ -193,6 +196,51 @@ function sgPick(blk,r){if(!sgMe)return;if(sgMine[blk.key])return;
     else if(res&&res.status==='full'){toast(r.roomKey+' is full — pick another');sgLoadCounts();}
     else if(res&&res.status==='locked'){sgMine[blk.key]=res.room;toast('Already booked for this slot');sgLoadCounts();}
     else{toast('Could not book — try again');sgLoadCounts();}}).catch(()=>toast('Network error — try Refresh'));}
+
+function sgDownloadPDF(){
+  if(!sgMe){toast('Enter your ID first');return;}
+  const picks=Object.keys(sgMine);
+  if(!picks.length){toast('Book at least one session first');return;}
+  if(!window.jspdf){toast('PDF tool not loaded — check your internet');return;}
+  const {jsPDF}=window.jspdf;const doc=new jsPDF({unit:'pt',format:'a4'});
+  const W=doc.internal.pageSize.getWidth();
+  doc.setFillColor(23,102,179);doc.rect(0,0,W,84,'F');
+  doc.setTextColor(255,255,255);doc.setFont('helvetica','bold');doc.setFontSize(20);
+  doc.text('ANMC 2026 — My Schedule',40,44);
+  doc.setFont('helvetica','normal');doc.setFontSize(11);
+  doc.text('6th Arab Nurses & Midwives Conference · 19–21 Nov 2026 · Doha',40,66);
+  let y=118;
+  doc.setTextColor(20,40,90);doc.setFont('helvetica','bold');doc.setFontSize(14);
+  doc.text(String(sgMe.name||'Attendee'),40,y);
+  doc.setFont('helvetica','normal');doc.setFontSize(10);doc.setTextColor(120,120,120);
+  doc.text('ID: '+sgMe.id,40,y+16);y+=48;
+  DATA.days.forEach(day=>{
+    if(y>760){doc.addPage();y=60;}
+    doc.setFont('helvetica','bold');doc.setFontSize(13);doc.setTextColor(23,102,179);
+    doc.text(day.label+' · '+day.date,40,y);y+=8;
+    doc.setDrawColor(205,222,245);doc.line(40,y,W-40,y);y+=20;
+    let any=false;
+    day.blocks.forEach(blk=>{const rk=sgMine[blk.key];if(!rk)return;any=true;
+      const r=blk.rooms.find(x=>x.roomKey===rk);const track=r&&r.track?(' · '+r.track):'';
+      if(y>780){doc.addPage();y=60;}
+      doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(70,90,120);
+      doc.text(String(blk.time||blk.title),40,y);
+      doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(23,102,179);
+      doc.text(String(rk),210,y);
+      doc.setFont('helvetica','normal');doc.setTextColor(60,75,100);
+      const tr=doc.splitTextToSize(String(track).replace(/^ · /,''),W-270);
+      doc.text(tr,270,y);
+      y+=Math.max(24,tr.length*14+8);
+    });
+    if(!any){doc.setFont('helvetica','italic');doc.setFontSize(10);doc.setTextColor(150,150,150);doc.text('No sessions booked for this day.',40,y);y+=22;}
+    y+=16;
+  });
+  if(y>760){doc.addPage();y=60;}
+  doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(150,150,150);
+  doc.text('Day 1 (19 Nov) — plenary programme for all attendees in the Main Hall.',40,y+2);
+  doc.save('My_ANMC2026_Schedule.pdf');
+}
+document.getElementById('sgPdf').onclick=sgDownloadPDF;
 
 /* ================= TEAM MONITOR ================= */
 let tmCounts={},tmRows=[],tmCurDay=DATA.days[0].day,tmEditOn=false,tmTimer=null,tmInit=false;
